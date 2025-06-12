@@ -1,0 +1,25 @@
+.chat-content-container {
+  max-width: 960px;
+}
+
+input::placeholder {
+  color: #a59cbf;
+}
+
+.bg-dark-subtle {
+  background-color: #302a41;
+}
+
+input.form-control:focus {
+  border-color: #957fd8;
+  box-shadow: none;
+}
+
+.btn-primary {
+  background-color: #957fd8;
+  border-color: #957fd8;
+
+  &:hover {
+    background-color: darken(#957fd8, 5%);
+  }
+}

@@ -1,0 +1,27 @@
+# Node.js dependencies
+/node_modules
+
+# Environment variables
+.env            # CRITICAL: DO NOT COMMIT YOUR .ENV FILE!
+
+# Uploaded files (as configured in your Multer middleware)
+/uploads        # Ignore the folder where uploaded images are stored
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log           # Any other log files
+
+# Build artifacts (if you compile your JS, e.g., from TypeScript)
+/dist
+/build
+
+# IDE and OS specific files
+.idea/
+.vscode/        # Optional: Uncomment if you want to ignore VS Code settings
+.DS_Store       # macOS
+Thumbs.db       # Windows
+
+# Test results
+/coverage

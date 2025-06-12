@@ -1,0 +1,297 @@
+@import 'src/styles.scss';
+
+.add-journal-wrapper {
+  background-color: var(--app-dark-bg);
+  min-height: calc(100vh - 60px);
+  padding: 2.5rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.journal-form {
+  background-color: var(--panel-bg-color);
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.journal-header-section {
+  padding: 2rem 2.5rem 1rem;
+  border-bottom: 1px solid rgba(var(--text-dark), 0.1);
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .journal-page-title {
+    color: var(--text-dark);
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+form {
+  padding: 0 2.5rem 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+
+  label {
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--panel-input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 0.75rem;
+    color: var(--text-dark);
+    font-size: 1rem;
+    line-height: 1.5;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    outline: none;
+
+    &:focus {
+      border-color: var(--primary-purple);
+      box-shadow: 0 0 0 3px rgba(var(--primary-purple-rgb), 0.15);
+    }
+
+    &::placeholder {
+      color: var(--text-muted);
+      opacity: 0.8;
+    }
+
+    &[type="date"] {
+      &::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.7;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .textarea-large {
+    min-height: 120px;
+    resize: vertical;
+    overflow-y: auto;
+    &::-webkit-scrollbar {
+      width: 0px;
+      height: 0px;
+      background: transparent;
+    }
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+    -ms-overflow-style: none;
+  }
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.upload-section {
+  padding: 0 0 1.5rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+
+  .upload-box {
+    border: 2px dashed var(--input-border);
+    background-color: var(--panel-input-bg);
+    padding: 3rem;
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      border-color: var(--primary-purple);
+      box-shadow: inset 0 0 10px rgba(var(--primary-purple-rgb), 0.2);
+    }
+
+    p {
+      color: var(--text-dark);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .text-white-50 {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .btn-dark {
+      @extend .btn-custom-secondary;
+    }
+  }
+
+  .image-preview-container {
+    position: relative;
+    display: inline-block;
+    .img-thumbnail {
+      border: 1px solid var(--input-border);
+      background-color: var(--panel-input-bg);
+      padding: 0.5rem;
+      border-radius: 0.75rem;
+      max-width: 150px;
+      height: auto;
+      display: block;
+      margin: 1rem auto 0;
+      object-fit: contain;
+    }
+    .clear-image-btn {
+      position: absolute;
+      top: 0;
+      right: -12px;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.9;
+      &:hover {
+        opacity: 1;
+        transform: scale(1.1);
+      }
+      i {
+        font-size: 1.1rem;
+        display: block;
+      }
+    }
+  }
+}
+
+.optional-header {
+  color: var(--text-dark);
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 1.5rem 0 0.5rem;
+  margin-top: 1rem;
+}
+
+.info-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-size: 1rem;
+  .spinner-border {
+    color: var(--primary-purple);
+  }
+}
+
+.alert {
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin: 1.5rem 0;
+  border: 1px solid transparent;
+}
+
+.action-buttons {
+  padding: 2rem 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .btn-custom-secondary,
+  .btn-custom-primary {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .journal-form {
+    border-radius: 1rem;
+  }
+
+  .journal-header-section {
+    padding: 1.5rem 1.5rem 0.5rem;
+    .journal-page-title {
+      font-size: 2rem;
+    }
+  }
+
+  form {
+    padding: 0 1.5rem 1rem;
+  }
+
+  .upload-section {
+    padding-bottom: 1rem;
+  }
+
+  .upload-section .upload-box {
+    padding: 2rem;
+  }
+
+  .optional-header {
+    padding: 1rem 0 0.5rem;
+    font-size: 1.3rem;
+  }
+
+  .alert {
+    margin: 1rem 0;
+  }
+
+  .action-buttons {
+    padding: 1.5rem 0;
+    justify-content: center;
+    .btn-custom-secondary,
+    .btn-custom-primary {
+      width: 100%;
+      max-width: 250px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .add-edit-journal-wrapper {
+    padding: 1.5rem 0.5rem;
+  }
+  .journal-form {
+    padding: 0;
+  }
+  .journal-header-section {
+    .journal-page-title {
+      font-size: 1.8rem;
+    }
+  }
+}
