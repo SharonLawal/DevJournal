@@ -4,6 +4,20 @@ const cors = require('cors');
 require('dotenv').config();
 const path = require('path');
 
+const connectDB = require('./config/db');
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION! Shutting down...', reason);
+    process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! Shutting down...', err.message);
+    process.exit(1);
+});
+
+connectDB();
+
 const authRoutes = require('./routes/authRoutes');
 const journalRoutes = require('./routes/journalRoutes');
 
