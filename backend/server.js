@@ -16,34 +16,38 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
-connectDB();
+(async () => {
+  try {
+    await connectDB();
+    console.log('MongoDB connection successful. Starting Express server...');
 
-const authRoutes = require('./routes/authRoutes');
-const journalRoutes = require('./routes/journalRoutes');
+    const app = express();
 
-const app = express();
+    const corsOptions = {
+        origin: process.env.FRONTEND_URL,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+        optionsSuccessStatus: 204
+    };
+    app.use(cors(corsOptions));
 
-const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-  optionsSuccessStatus: 204
-};
-app.use(cors(corsOptions));
-app.use(express.json());
+    app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.catch(err => process.exit(1));
+    app.use('/api/auth', require('./routes/authRoutes'));
+    app.use('/api/journals', require('./routes/journalRoutes'));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/journals', journalRoutes);
+    app.get('/', (req, res) => {
+        res.send('API is running...');
+    });
 
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
+    const PORT = process.env.PORT || 5000;
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {});
+    app.listen(PORT, () => {
+        console.log(`Server is LIVE and listening on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('Failed to start server due to database connection error:', error.message);
+    process.exit(1);
+  }
+})();
