@@ -1,4 +1,4 @@
-const Journal = require('../models/journal');
+const Journal = require('../models/Journal');
 const upload = require('../middleware/upload');
 
 const getUserIdFromReq = (req) => {
