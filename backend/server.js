@@ -35,6 +35,7 @@ process.on('uncaughtException', (err) => {
 
     app.use('/api/auth', require('./routes/authRoutes'));
     app.use('/api/journals', require('./routes/journalRoutes'));
+    app.use('/api/ai', require('./routes/aiRoutes') );
 
     app.get('/', (req, res) => {
         res.send('API is running...');

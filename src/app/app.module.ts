@@ -28,6 +28,7 @@ import { ViewJournalComponent } from './journal/view-journal/view-journal.compon
 
 import { JournalService } from './services/journal-service.service';
 import { AuthService } from './services/auth.service';
+import { SafeHtmlPipe } from './pipes/safe-html.pipe';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,8 @@ import { AuthService } from './services/auth.service';
     ChatComponent,
     SettingsComponent,
     AddJournalComponent,
-    ViewJournalComponent
+    ViewJournalComponent,
+    SafeHtmlPipe
   ],
   imports: [
     BrowserModule,

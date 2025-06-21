@@ -82,7 +82,7 @@ export class DashboardComponent implements OnInit {
             new Date(a.updatedAt || a.createdAt).getTime()
         );
 
-        this.totalJournals = sorted.length;
+        this.totalJournals = sorted.filter((j: any) => j.status === 'published').length;
         this.draftCount = sorted.filter((j: any) => j.status === 'draft').length;
 
         if (sorted.length > 0) {

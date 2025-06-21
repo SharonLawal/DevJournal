@@ -1,11 +1,10 @@
-// src/app/journal/view-journal/view-journal.component.ts
-
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JournalService } from '../../services/journal-service.service';
 import { Journal } from '../../models/journal.model';
 import jsPDF from 'jspdf';
 import { environment } from '../../../environments/environment';
+import { AiAssistantService } from '../../services/ai-assistant.service';
 
 @Component({
   selector: 'app-view-journal',
@@ -22,12 +21,21 @@ export class ViewJournalComponent implements OnInit {
   successMessage: string | null = null;
   newRelatedLink: string = '';
 
+  // --- NEW PROPERTIES FOR AI INSIGHTS ---
+  aiInsights: string = '';
+  isGeneratingInsights: boolean = false;
+  showInsightsSection: boolean = false; // Controls visibility of the AI insights display area
+  // --- END NEW PROPERTIES ---
+
   private readonly backendUrl: string = environment.apiUrl;
 
   constructor(
     private route: ActivatedRoute,
     private journalService: JournalService,
-    private router: Router
+    private router: Router,
+    // --- INJECT AI ASSISTANT SERVICE ---
+    private aiService: AiAssistantService // <-- Inject the AI service
+    // --- END INJECT ---
   ) {}
 
   ngOnInit(): void {
@@ -74,6 +82,32 @@ export class ViewJournalComponent implements OnInit {
       },
     });
   }
+
+  // --- NEW METHOD FOR AI INSIGHTS ---
+  getInsightsFromAI(): void {
+    if (!this.journalEntry || !this.journalEntry.content) {
+      this.aiInsights = "No journal content available to analyze.";
+      this.showInsightsSection = true; // Show the section even if no content
+      return;
+    }
+
+    this.isGeneratingInsights = true;
+    this.showInsightsSection = true; // Make the insights section visible
+    this.aiInsights = '<h3>Generating AI Insights...</h3><p>Please wait, this might take a few moments...</p>'; // User feedback
+
+    this.aiService.getJournalInsights(this.journalEntry.content).subscribe({
+      next: (response) => {
+        this.aiInsights = response.insights;
+        this.isGeneratingInsights = false;
+      },
+      error: (err) => {
+        console.error('Error getting AI insights for journal:', err);
+        this.aiInsights = '<h3>Error!</h3><p>Failed to generate insights from the AI. Please try again.</p>';
+        this.isGeneratingInsights = false;
+      }
+    });
+  }
+  // --- END NEW METHOD ---
 
   goBackToJournals(): void {
     this.router.navigate(['/journal']);

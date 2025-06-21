@@ -9,19 +9,37 @@
           <p class="mt-2">Loading journal entry...</p>
         </div>
 
-        <div *ngIf="errorMessage" class="alert alert-danger text-center mt-3" role="alert">
+        <div
+          *ngIf="errorMessage"
+          class="alert alert-danger text-center mt-3"
+          role="alert"
+        >
           {{ errorMessage }}
-          <button class="btn btn-sm btn-link text-white" (click)="goBackToJournals()">Go back to journals</button>
+          <button
+            class="btn btn-sm btn-link text-white"
+            (click)="goBackToJournals()"
+          >
+            Go back to journals
+          </button>
         </div>
 
-        <div *ngIf="isSaving && !successMessage && !errorMessage" class="alert alert-info text-center mt-3">
-          <div class="spinner-border spinner-border-sm text-light" role="status"></div>
+        <div
+          *ngIf="isSaving && !successMessage && !errorMessage"
+          class="alert alert-info text-center mt-3"
+        >
+          <div
+            class="spinner-border spinner-border-sm text-light"
+            role="status"
+          ></div>
           Saving changes...
         </div>
-        <div *ngIf="successMessage" class="alert alert-success text-center mt-3" role="alert">
+        <div
+          *ngIf="successMessage"
+          class="alert alert-success text-center mt-3"
+          role="alert"
+        >
           {{ successMessage }}
         </div>
-
 
         <ng-container *ngIf="!isLoading && !errorMessage && journalEntry">
           <div class="d-flex flex-wrap gap-2 py-3">
@@ -30,9 +48,16 @@
             <span class="text-white">{{ journalEntry.title }}</span>
           </div>
 
-          <h2 class="text-white fs-2 fw-bold pt-3 pb-2">{{ journalEntry.title }}</h2>
-          <p class="text-muted small">Written on: {{ journalEntry.date | date:'mediumDate' }}</p>
-          <p class="text-muted small" *ngIf="journalEntry.tags && journalEntry.tags.length > 0">
+          <h2 class="text-white fs-2 fw-bold pt-3 pb-2">
+            {{ journalEntry.title }}
+          </h2>
+          <p class="text-muted small">
+            Written on: {{ journalEntry.date | date : "mediumDate" }}
+          </p>
+          <p
+            class="text-muted small"
+            *ngIf="journalEntry.tags && journalEntry.tags.length > 0"
+          >
             Tags: {{ getTagsAsString(journalEntry.tags) }}
           </p>
           <p class="text-muted small" *ngIf="journalEntry.category">
@@ -43,16 +68,45 @@
             <div class="w-100 ratio ratio-4x3 rounded overflow-hidden">
               <div
                 class="w-100 h-100 bg-cover bg-center"
-                [style.background-image]="'url(' + journalEntry.imageUrl + ')'">
-              </div>
+                [style.background-image]="'url(' + journalEntry.imageUrl + ')'"
+              ></div>
             </div>
           </div>
-          <div *ngIf="!journalEntry.imageUrl" class="bg-dark p-3 rounded text-center text-muted">
+          <div
+            *ngIf="!journalEntry.imageUrl"
+            class="bg-dark p-3 rounded text-center text-muted"
+          >
             No image for this entry.
           </div>
 
           <p class="text-white mt-4" [innerHTML]="journalEntry.content"></p>
 
+          <div class="d-flex justify-content-center my-4">
+            <button
+              class="btn ai-insight-btn"
+              (click)="getInsightsFromAI()"
+              [disabled]="isGeneratingInsights || !journalEntry?.content"
+            >
+              <span
+                *ngIf="isGeneratingInsights"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              {{
+                isGeneratingInsights
+                  ? "Generating Insights..."
+                  : "Get AI Insights for this Journal"
+              }}
+            </button>
+          </div>
+          <div
+            *ngIf="showInsightsSection"
+            class="ai-insights-section mt-5 p-4 rounded"
+          >
+            <h3 class="text-white fs-5 fw-bold mb-3">AI Insights</h3>
+            <div [innerHTML]="aiInsights | safeHtml"></div>
+          </div>
           <h3 class="text-white fs-5 fw-bold mt-4">Notes</h3>
           <div class="mb-4">
             <textarea
@@ -60,16 +114,34 @@
               rows="6"
               placeholder="Add your notes here..."
               [(ngModel)]="journalEntry.notes"
-              (blur)="saveNotes()">
+              (blur)="saveNotes()"
+            >
             </textarea>
           </div>
 
           <h3 class="text-white fs-5 fw-bold mt-4">Related Work</h3>
           <div class="mb-5">
-            <ul class="list-unstyled text-white-50" *ngIf="journalEntry.relatedLinks && journalEntry.relatedLinks.length > 0">
-              <li *ngFor="let link of journalEntry.relatedLinks; let i = index" class="d-flex align-items-center mb-1">
-                <a [href]="link" target="_blank" class="text-white-50 small text-truncate flex-grow-1 me-2">{{ link }}</a>
-                <button class="btn btn-sm btn-outline-danger" (click)="deleteRelatedLink(i)">
+            <ul
+              class="list-unstyled text-white-50"
+              *ngIf="
+                journalEntry.relatedLinks &&
+                journalEntry.relatedLinks.length > 0
+              "
+            >
+              <li
+                *ngFor="let link of journalEntry.relatedLinks; let i = index"
+                class="d-flex align-items-center mb-1"
+              >
+                <a
+                  [href]="link"
+                  target="_blank"
+                  class="text-white-50 small text-truncate flex-grow-1 me-2"
+                  >{{ link }}</a
+                >
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="deleteRelatedLink(i)"
+                >
                   <i class="bi bi-trash"></i>
                 </button>
               </li>
@@ -78,7 +150,9 @@
               type="text"
               class="form-control bg-dark border-secondary text-white rounded p-3 mt-2"
               placeholder="Add a link to related work..."
-              [(ngModel)]="newRelatedLink" (keyup.enter)="addRelatedLink()">
+              [(ngModel)]="newRelatedLink"
+              (keyup.enter)="addRelatedLink()"
+            />
           </div>
 
           <div class="d-flex justify-content-end gap-3 mt-4">
@@ -92,7 +166,6 @@
               <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
             </button>
           </div>
-
         </ng-container>
       </div>
     </div>

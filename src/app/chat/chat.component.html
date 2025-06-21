@@ -1,36 +1,51 @@
 <div class="container py-5">
-  <div class="chat-content-container d-flex flex-column mx-auto" style="max-width: 960px;">
+  <div class="chat-content-container d-flex flex-column mx-auto">
     <h2 class="text-white fw-bold fs-3 mb-4 px-3">AI Assistant</h2>
 
-    <!-- Chat Bubble -->
-    <div class="d-flex align-items-end gap-3 px-3 mb-4">
-      <div
-        class="rounded-circle flex-shrink-0"
-        style="
-          background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBtD_45P4mrydjKuRX6DkkUzQgDBeijear3baWBpZQ8v52F_-PLS4vFZddg-TdFAUuEVoq7tCn0A196FdA1DxEvvHTvp_64Xowrz9EhBRHzmMjAukI1MNdhpnUmX6Ga5JD3jXoMVv4GM9ewDZA_MjhXnoDR0qBE2PYzoWCSGSBhHrBcXmzb_31LTzpZPONwMPF9AzV9VNPNoHsbsWNke08Rw6cwofXmawqmICcdBKJ5WxDMYQj5syjZKUoX8rDd0aRbVLIno_IV4oIr');
-          width: 40px;
-          height: 40px;
-          background-size: cover;
-          background-position: center;
-        "
-      ></div>
-      <div class="d-flex flex-column flex-grow-1">
-        <p class="text-muted small mb-1">AI Assistant</p>
-        <div class="bg-dark-subtle text-white rounded-3 px-3 py-2">
-          Hello! I'm here to help you with your development questions. How can I assist you today?
+    <div class="messages-area px-3 mb-4 flex-grow-1 overflow-auto" #messageContainer>
+      <div *ngFor="let msg of messages" class="d-flex align-items-end gap-3 mb-3">
+        <div *ngIf="msg.sender === 'ai'" class="avatar avatar-ai flex-shrink-0">
+          AI
+        </div>
+        <div *ngIf="msg.sender === 'user'" class="avatar avatar-user flex-shrink-0">
+          You
+        </div>
+
+        <div class="d-flex flex-column flex-grow-1" [class.align-items-end]="msg.sender === 'user'">
+          <p class="text-muted small mb-1">{{ msg.sender === 'ai' ? 'AI Assistant' : 'You' }}</p>
+          <div class="message-bubble rounded-3 px-3 py-2"
+               [ngClass]="{'bubble-ai': msg.sender === 'ai', 'bubble-user': msg.sender === 'user'}"
+               [innerHTML]="msg.text | safeHtml">
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="isLoading" class="d-flex align-items-center gap-3 px-3 mb-3">
+        <div class="avatar avatar-ai flex-shrink-0">AI</div>
+        <div class="d-flex flex-column flex-grow-1">
+          <p class="text-muted small mb-1">AI Assistant</p>
+          <div class="message-bubble bubble-ai rounded-3 px-3 py-2">
+            <span class="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
+            AI is thinking...
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Input Area -->
-    <div class="px-3">
+    <div class="chat-input-area px-3 py-3 border-top border-secondary">
       <div class="d-flex align-items-center gap-3">
-        <input
-          type="text"
-          class="form-control flex-grow-1 bg-dark text-white border-0 px-3 py-2 rounded-start placeholder-text-light"
+        <textarea
+          class="form-control flex-grow-1 chat-textarea"
           placeholder="Ask me anything..."
-        />
-        <button class="btn btn-primary text-white rounded-pill px-4 py-2 d-none d-md-block">Send</button>
+          [(ngModel)]="userMessage"
+          (keyup.enter)="sendMessage()"  [disabled]="isLoading"
+          rows="1" ></textarea>
+        <button
+          class="btn btn-primary text-white rounded-pill px-4 py-2 d-none d-md-block"
+          (click)="sendMessage()"
+          [disabled]="isLoading || !userMessage.trim()">
+          Send
+        </button>
       </div>
     </div>
   </div>
