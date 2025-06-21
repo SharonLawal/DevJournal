@@ -2,20 +2,39 @@
   <div class="chat-content-container d-flex flex-column mx-auto">
     <h2 class="text-white fw-bold fs-3 mb-4 px-3">AI Assistant</h2>
 
-    <div class="messages-area px-3 mb-4 flex-grow-1 overflow-auto" #messageContainer>
-      <div *ngFor="let msg of messages" class="d-flex align-items-end gap-3 mb-3">
+    <div
+      class="messages-area px-3 mb-4 flex-grow-1 overflow-auto"
+      #messageContainer
+    >
+      <div
+        *ngFor="let msg of messages"
+        class="d-flex align-items-end gap-3 mb-3"
+      >
         <div *ngIf="msg.sender === 'ai'" class="avatar avatar-ai flex-shrink-0">
           AI
         </div>
-        <div *ngIf="msg.sender === 'user'" class="avatar avatar-user flex-shrink-0">
+        <div
+          *ngIf="msg.sender === 'user'"
+          class="avatar avatar-user flex-shrink-0"
+        >
           You
         </div>
 
-        <div class="d-flex flex-column flex-grow-1" [class.align-items-end]="msg.sender === 'user'">
-          <p class="text-muted small mb-1">{{ msg.sender === 'ai' ? 'AI Assistant' : 'You' }}</p>
-          <div class="message-bubble rounded-3 px-3 py-2"
-               [ngClass]="{'bubble-ai': msg.sender === 'ai', 'bubble-user': msg.sender === 'user'}"
-               [innerHTML]="msg.text | safeHtml">
+        <div
+          class="d-flex flex-column flex-grow-1"
+          [class.align-items-end]="msg.sender === 'user'"
+        >
+          <p class="text-muted small mb-1">
+            {{ msg.sender === "ai" ? "AI Assistant" : "You" }}
+          </p>
+          <div
+            class="message-bubble rounded-3 px-3 py-2"
+            [ngClass]="{
+              'bubble-ai': msg.sender === 'ai',
+              'bubble-user': msg.sender === 'user'
+            }"
+          >
+            <markdown [data]="msg.text"></markdown>
           </div>
         </div>
       </div>
@@ -25,7 +44,11 @@
         <div class="d-flex flex-column flex-grow-1">
           <p class="text-muted small mb-1">AI Assistant</p>
           <div class="message-bubble bubble-ai rounded-3 px-3 py-2">
-            <span class="spinner-grow spinner-grow-sm me-2" role="status" aria-hidden="true"></span>
+            <span
+              class="spinner-grow spinner-grow-sm me-2"
+              role="status"
+              aria-hidden="true"
+            ></span>
             AI is thinking...
           </div>
         </div>
@@ -38,12 +61,15 @@
           class="form-control flex-grow-1 chat-textarea"
           placeholder="Ask me anything..."
           [(ngModel)]="userMessage"
-          (keyup.enter)="sendMessage()"  [disabled]="isLoading"
-          rows="1" ></textarea>
+          (keyup.enter)="sendMessage()"
+          [disabled]="isLoading"
+          rows="1"
+        ></textarea>
         <button
           class="btn btn-primary text-white rounded-pill px-4 py-2 d-none d-md-block"
           (click)="sendMessage()"
-          [disabled]="isLoading || !userMessage.trim()">
+          [disabled]="isLoading || !userMessage.trim()"
+        >
           Send
         </button>
       </div>
