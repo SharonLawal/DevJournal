@@ -1,9 +1,10 @@
-// frontend/src/app/chat/chat.component.ts
-
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- Import for ngFor, ngIf
-import { FormsModule } from '@angular/forms'; // <-- Import for [(ngModel)]
-import { AiAssistantService } from '../services/ai-assistant.service'; // <-- Import your new service
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked,
+} from '@angular/core';
+import { AiAssistantService } from '../services/ai-assistant.service';
 
 interface ChatMessage {
   text: string;
@@ -13,49 +14,92 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.scss']
+  styleUrls: ['./chat.component.scss'],
 })
-export class ChatComponent {
-  // Bind your input to this variable
+export class ChatComponent implements AfterViewChecked {
   userMessage: string = '';
-  // Array to hold chat messages
   messages: ChatMessage[] = [];
-  isLoading: boolean = false; // To show loading state
+  isLoading: boolean = false;
 
-  // Inject the AI Assistant Service
+  @ViewChild('messageContainer') private messageContainer!: ElementRef;
+
   constructor(private aiService: AiAssistantService) {
-    // Optional: Add an initial greeting message from the AI
     this.messages.push({
-      text: "Hello! I'm here to help you with your development questions. How can I assist you today?",
-      sender: 'ai'
+      text: "Hello! I can help you with your code. For example, ask me to 'write a TypeScript function to sort an array'.",
+      sender: 'ai',
     });
   }
 
-  sendMessage(): void {
-    if (!this.userMessage.trim() || this.isLoading) {
-      return; // Prevent sending empty messages or multiple messages
+  ngAfterViewChecked() {
+    this.scrollToBottom();
+  }
+
+  private scrollToBottom(): void {
+    try {
+      this.messageContainer.nativeElement.scrollTop =
+        this.messageContainer.nativeElement.scrollHeight;
+    } catch (err) {}
+  }
+
+  onEnter(event: any): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      this.sendMessage();
     }
+  }
+  
+  autoResize(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
 
-    // Add user message to chat history
+  sendMessage(): void {
+    if (!this.userMessage.trim() || this.isLoading) { return; }
+
     this.messages.push({ text: this.userMessage, sender: 'user' });
-    const messageToSend = this.userMessage; // Store it before clearing input
-    this.userMessage = ''; // Clear input field immediately
-    this.isLoading = true; // Show loading spinner
+    const messageToSend = this.userMessage;
+    this.userMessage = '';
+    this.isLoading = true;
 
-    // Call the AI assistant service
+    const textarea = document.querySelector('.chat-textarea') as HTMLTextAreaElement;
+    if (textarea) { textarea.style.height = 'auto'; }
+
     this.aiService.sendMessage(messageToSend).subscribe({
       next: (response) => {
         this.messages.push({ text: response.reply, sender: 'ai' });
-        this.isLoading = false; // Hide loading spinner
+        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error sending message to AI:', error);
         this.messages.push({
-          text: 'Sorry, I could not get a response. Please try again later.',
-          sender: 'ai'
+          text: 'Sorry, there was an error processing your request. Please try again.',
+          sender: 'ai',
         });
-        this.isLoading = false; // Hide loading spinner
-      }
+        this.isLoading = false;
+      },
+    });
+  }
+
+  containsCode(text: string): boolean {
+    return text.includes('```');
+  }
+
+  copyCode(event: MouseEvent, textToCopy: string) {
+    const codeRegex = /```(?:\w+\n)?([\s\S]*?)```/;
+    const match = codeRegex.exec(textToCopy);
+    const code = match ? match[1] : textToCopy;
+
+    navigator.clipboard.writeText(code).then(() => {
+      const button = event.target as HTMLElement;
+      const originalIcon = button.innerHTML;
+      button.innerHTML = `<i class="fas fa-check"></i>`;
+      button.classList.add('copied');
+
+      setTimeout(() => {
+        button.innerHTML = originalIcon;
+        button.classList.remove('copied');
+      }, 1500);
     });
   }
 }

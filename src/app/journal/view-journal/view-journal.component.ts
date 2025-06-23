@@ -16,14 +16,12 @@ export class ViewJournalComponent implements OnInit {
   journalEntry: Journal | undefined;
   isLoading: boolean = true;
   errorMessage: string | null = null;
-
   isSaving: boolean = false;
   successMessage: string | null = null;
   newRelatedLink: string = '';
-
-  aiInsights: string = '';
   isGeneratingInsights: boolean = false;
   showInsightsSection: boolean = false;
+  aiInsightsData: any = null;
 
   private readonly backendUrl: string = environment.apiUrl;
 
@@ -80,26 +78,26 @@ export class ViewJournalComponent implements OnInit {
   }
 
   getInsightsFromAI(): void {
-    if (!this.journalEntry || !this.journalEntry.content) {
-      this.aiInsights = "No journal content available to analyze.";
-      this.showInsightsSection = true;
+    if (!this.journalEntry?.content || this.isGeneratingInsights) {
       return;
     }
 
     this.isGeneratingInsights = true;
     this.showInsightsSection = true;
-    this.aiInsights = '### Generating AI Insights...\n\nPlease wait, this might take a few moments...'; // Use Markdown here now
+    this.aiInsightsData = null;
 
     this.aiService.getJournalInsights(this.journalEntry.content).subscribe({
       next: (response) => {
-        this.aiInsights = response.insights;
+        this.aiInsightsData = response.insights;
         this.isGeneratingInsights = false;
       },
       error: (err) => {
         console.error('Error getting AI insights for journal:', err);
-        this.aiInsights = '### Error!\n\nFailed to generate insights from the AI. Please try again.'; // Use Markdown for errors too
+        this.aiInsightsData = {
+          error: 'Failed to generate insights from the AI. Please try again.',
+        };
         this.isGeneratingInsights = false;
-      }
+      },
     });
   }
 
@@ -155,7 +153,6 @@ export class ViewJournalComponent implements OnInit {
             }
           }
           this.journalEntry = processedUpdatedJournal;
-
           this.successMessage = 'Changes saved successfully!';
           this.isSaving = false;
           setTimeout(() => (this.successMessage = null), 3000);
@@ -259,7 +256,6 @@ export class ViewJournalComponent implements OnInit {
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      // Helper function to add new page if content overflows
       const addNewPage = (
         docInstance: jsPDF,
         currentY: number,
@@ -272,7 +268,6 @@ export class ViewJournalComponent implements OnInit {
         return currentY + lineSpacing;
       };
 
-      // Add Title
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
       let titleLines = doc.splitTextToSize(
@@ -282,10 +277,9 @@ export class ViewJournalComponent implements OnInit {
       doc.text(titleLines, margin, yPos);
       yPos = addNewPage(doc, yPos, titleLines.length * 9 + 5);
 
-      // Add Date and Category
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100); // Gray color
+      doc.setTextColor(100, 100, 100);
       doc.text(
         `Written on: ${new Date(this.journalEntry.date).toLocaleDateString()}`,
         margin,
@@ -305,13 +299,11 @@ export class ViewJournalComponent implements OnInit {
         );
         yPos = addNewPage(doc, yPos, 6);
       }
-      doc.setTextColor(0, 0, 0); // Reset to black
+      doc.setTextColor(0, 0, 0);
+      yPos = addNewPage(doc, yPos, 10);
 
-      yPos = addNewPage(doc, yPos, 10); // Space before content
-
-      // Add Image (if exists)
       if (this.journalEntry.imageUrl) {
-        this.isLoading = true; // Indicate loading while fetching image
+        this.isLoading = true;
         this.loadImageToBase64(this.journalEntry.imageUrl)
           .then((base64Image) => {
             if (base64Image) {
@@ -319,7 +311,7 @@ export class ViewJournalComponent implements OnInit {
               const imgWidth = pageWidth - 2 * margin;
               const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
 
-              yPos = addNewPage(doc, yPos, 5); // Small margin before image
+              yPos = addNewPage(doc, yPos, 5);
               if (yPos + imgHeight >= pageHeight - margin) {
                 doc.addPage();
                 yPos = margin;
@@ -359,7 +351,6 @@ export class ViewJournalComponent implements OnInit {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Helper function to add new page if content overflows
     const addNewPage = (
       docInstance: jsPDF,
       currentY: number,
@@ -372,38 +363,32 @@ export class ViewJournalComponent implements OnInit {
       return currentY + lineSpacing;
     };
 
-    // Add Content (HTML to Text conversion)
     if (this.journalEntry?.content) {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      yPos = addNewPage(doc, yPos, 10); // Space before content
-
-      // Convert HTML content to plain text, handling common tags
+      yPos = addNewPage(doc, yPos, 10);
       const parser = new DOMParser();
       const docHtml = parser.parseFromString(
         this.journalEntry.content,
         'text/html'
       );
       const textContent = docHtml.body.textContent || '';
-
       const contentLines = doc.splitTextToSize(
         textContent,
         pageWidth - 2 * margin
       );
       contentLines.forEach((line: string | string[]) => {
-        yPos = addNewPage(doc, yPos, 7); // Line height for content
+        yPos = addNewPage(doc, yPos, 7);
         doc.text(line, margin, yPos);
       });
     }
 
-    // Add Notes
     if (this.journalEntry?.notes) {
-      yPos = addNewPage(doc, yPos, 15); // Space before Notes heading
+      yPos = addNewPage(doc, yPos, 15);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('Notes', margin, yPos);
       yPos = addNewPage(doc, yPos, 10);
-
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       const notesLines = doc.splitTextToSize(
@@ -416,17 +401,15 @@ export class ViewJournalComponent implements OnInit {
       });
     }
 
-    // Add Related Work
     if (
       this.journalEntry?.relatedLinks &&
       this.journalEntry.relatedLinks.length > 0
     ) {
-      yPos = addNewPage(doc, yPos, 15); // Space before Related Work heading
+      yPos = addNewPage(doc, yPos, 15);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('Related Work', margin, yPos);
       yPos = addNewPage(doc, yPos, 10);
-
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       this.journalEntry.relatedLinks.forEach((link) => {
@@ -441,11 +424,10 @@ export class ViewJournalComponent implements OnInit {
     setTimeout(() => (this.successMessage = null), 3000);
   }
 
-  // Helper function to load image and convert to Base64
   private loadImageToBase64(url: string): Promise<string | null> {
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.crossOrigin = 'Anonymous'; // Required for CORS images
+      img.crossOrigin = 'Anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;

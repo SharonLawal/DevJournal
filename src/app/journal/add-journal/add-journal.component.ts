@@ -17,7 +17,6 @@ export class AddJournalComponent implements OnInit {
   isSaving: boolean = false;
   successMessage: string | null = null;
   errorMessage: string | null = null;
-
   isEditMode: boolean = false;
   journalId: string | null = null;
 
@@ -35,9 +34,10 @@ export class AddJournalComponent implements OnInit {
       title: ['', [Validators.required, Validators.minLength(3)]],
       content: ['', [Validators.required, Validators.minLength(10)]],
       category: ['', Validators.required],
-      date: [new Date(), Validators.required],
+      date: [new Date().toISOString().split('T')[0], Validators.required],
       tags: [''],
       relatedLinks: [''],
+      status: ['draft'],
     });
 
     this.route.paramMap.subscribe((params) => {
@@ -45,55 +45,40 @@ export class AddJournalComponent implements OnInit {
       if (this.journalId) {
         this.isEditMode = true;
         this.loadJournalData(this.journalId);
-      } else {
-        this.isEditMode = false;
-        this.journalForm.reset({ date: new Date() });
-        this.selectedFile = null;
-        this.imageUrl = null;
       }
     });
   }
 
   loadJournalData(id: string): void {
     this.isSaving = true;
-    this.errorMessage = null;
     this.journalService.getJournalById(id).subscribe({
       next: (journal: Journal) => {
-        this.journalForm.patchValue({
+        // This object holds the data from the backend, including the content with <p> tags
+        const formData = {
           title: journal.title,
-          content: journal.content,
+          content: journal.content, // The HTML content is correctly placed here
           category: journal.category,
-          date: journal.date ? new Date(journal.date) : new Date(),
+          date: new Date(journal.date).toISOString().split('T')[0],
           tags: journal.tags ? journal.tags.join(', ') : '',
           relatedLinks: journal.relatedLinks
             ? journal.relatedLinks.join(', ')
             : '',
-        });
+          status: journal.status || 'draft',
+        };
 
-        if (
-          journal.imageUrl &&
-          typeof journal.imageUrl === 'string' &&
-          journal.imageUrl.trim() !== ''
-        ) {
-          if (
-            !journal.imageUrl.startsWith('http://') &&
-            !journal.imageUrl.startsWith('https://') &&
-            !journal.imageUrl.startsWith('data:image/')
-          ) {
-            this.imageUrl = `${this.backendUrl}${journal.imageUrl}`;
-          } else {
-            this.imageUrl = journal.imageUrl;
-          }
+        // This is the line that fixes the issue by reliably updating all controls, including Quill
+        this.journalForm.reset(formData);
+
+        if (journal.imageUrl && !journal.imageUrl.startsWith('http')) {
+          this.imageUrl = `${this.backendUrl}${journal.imageUrl}`;
         } else {
-          this.imageUrl = null;
+          this.imageUrl = journal.imageUrl ?? null;
         }
-
         this.isSaving = false;
       },
-      error: () => {
+      error: (err) => {
         this.errorMessage = 'Failed to load journal. Please try again.';
         this.isSaving = false;
-        this.router.navigate(['/journal']);
       },
     });
   }
@@ -104,13 +89,8 @@ export class AddJournalComponent implements OnInit {
     if (fileList && fileList.length > 0) {
       this.selectedFile = fileList[0];
       const reader = new FileReader();
-      reader.onload = () => {
-        this.imageUrl = reader.result as string;
-      };
+      reader.onload = () => (this.imageUrl = reader.result as string);
       reader.readAsDataURL(this.selectedFile);
-    } else {
-      this.selectedFile = null;
-      this.imageUrl = null;
     }
   }
 
@@ -126,25 +106,30 @@ export class AddJournalComponent implements OnInit {
     if (files && files.length > 0) {
       this.selectedFile = files[0];
       const reader = new FileReader();
-      reader.onload = () => {
-        this.imageUrl = reader.result as string;
-      };
+      reader.onload = () => (this.imageUrl = reader.result as string);
       reader.readAsDataURL(this.selectedFile);
     }
   }
 
-  saveJournal(isDraft: boolean): void {
-    if (this.journalForm.invalid && !isDraft) {
+  onPublish(): void {
+    if (this.journalForm.invalid) {
       this.journalForm.markAllAsTouched();
-      this.errorMessage = 'Please correct the highlighted errors.';
+      this.errorMessage = 'Please fill out all required fields to publish.';
       return;
     }
+    this.processSave('published');
+  }
 
+  onSaveDraft(): void {
+    this.processSave('draft');
+  }
+
+  private processSave(status: 'published' | 'draft'): void {
     this.isSaving = true;
     this.successMessage = null;
     this.errorMessage = null;
 
-    let journalData: Journal = {
+    let journalData: Partial<Journal> = {
       title: this.journalForm.value.title,
       content: this.journalForm.value.content,
       category: this.journalForm.value.category,
@@ -153,57 +138,42 @@ export class AddJournalComponent implements OnInit {
         ? this.journalForm.value.tags
             .split(',')
             .map((tag: string) => tag.trim())
-            .filter((tag: string) => tag.length > 0)
+            .filter(Boolean)
         : [],
       relatedLinks: this.journalForm.value.relatedLinks
         ? this.journalForm.value.relatedLinks
             .split(',')
             .map((link: string) => link.trim())
-            .filter((link: string) => link.length > 0)
+            .filter(Boolean)
         : [],
-      status: isDraft ? 'draft' : 'published',
+      status: status,
     };
 
     const finalizeSave = () => {
-      if (this.imageUrl && typeof this.imageUrl === 'string') {
-        if (this.imageUrl.startsWith(this.backendUrl)) {
-          journalData.imageUrl = this.imageUrl.replace(this.backendUrl, '');
-        } else if (this.imageUrl.startsWith('data:image/')) {
-          journalData.imageUrl = undefined;
-        } else {
-          journalData.imageUrl = this.imageUrl;
-        }
-      } else {
-        journalData.imageUrl = undefined;
+      if (this.imageUrl && this.imageUrl.startsWith(this.backendUrl)) {
+        journalData.imageUrl = this.imageUrl.replace(this.backendUrl, '');
+      } else if (this.imageUrl === null) {
+        journalData.imageUrl = '';
       }
 
-      let saveObservable;
-      if (this.isEditMode && this.journalId) {
-        saveObservable = this.journalService.updateJournal(
-          this.journalId,
-          journalData
-        );
-      } else {
-        saveObservable = this.journalService.createJournal(journalData);
-      }
+      const saveObservable =
+        this.isEditMode && this.journalId
+          ? this.journalService.updateJournal(
+              this.journalId,
+              journalData as Journal
+            )
+          : this.journalService.createJournal(journalData as Journal);
 
       saveObservable.subscribe({
         next: () => {
-          this.successMessage = this.isEditMode
-            ? 'Journal updated successfully!'
-            : isDraft
-            ? 'Journal saved as draft!'
-            : 'Journal published successfully!';
+          this.successMessage = `Journal ${status} successfully!`;
           this.isSaving = false;
-          this.journalForm.reset();
-          this.selectedFile = null;
-          this.imageUrl = null;
-          setTimeout(() => {
-            this.router.navigate(['/journal']);
-          }, 1500);
+          setTimeout(() => this.router.navigate(['/journal']), 1500);
         },
-        error: () => {
-          this.errorMessage = 'Failed to save journal. Please try again.';
+        error: (err) => {
+          this.errorMessage = `Failed to save journal. ${
+            err.error?.error || 'Please check the server logs.'
+          }`;
           this.isSaving = false;
         },
       });
@@ -211,12 +181,12 @@ export class AddJournalComponent implements OnInit {
 
     if (this.selectedFile) {
       this.journalService.uploadImage(this.selectedFile).subscribe({
-        next: (imageUploadResponse) => {
-          journalData.imageUrl = imageUploadResponse.imageUrl;
+        next: (response) => {
+          journalData.imageUrl = response.imageUrl;
           finalizeSave();
         },
-        error: () => {
-          this.errorMessage = 'Failed to upload image. Please try again.';
+        error: (err) => {
+          this.errorMessage = `Image upload failed. ${err.error?.error || ''}`;
           this.isSaving = false;
         },
       });

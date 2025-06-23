@@ -8,6 +8,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { MarkdownModule } from 'ngx-markdown';
+import { QuillModule } from 'ngx-quill';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -60,6 +61,7 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
     MatDatepickerModule,
     MatNativeDateModule,
     MarkdownModule.forRoot({ loader: HttpClient }),
+    QuillModule.forRoot(),
   ],
   providers: [
     JournalService,

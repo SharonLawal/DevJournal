@@ -28,7 +28,6 @@ const journalSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['draft', 'published'],
-    default: 'draft',
     required: true
   },
   createdAt: {

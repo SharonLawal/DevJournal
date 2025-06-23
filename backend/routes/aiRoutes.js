@@ -1,24 +1,16 @@
-// backend/routes/aiRoutes.js
-
 const express = require('express');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const router = express.Router();
 
-// Ensure GEMINI_API_KEY is loaded from environment variables (e.g., via dotenv in server.js)
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
 if (!geminiApiKey) {
     console.error('SERVER ERROR: GEMINI_API_KEY is not set in environment variables! AI features will not work.');
-    // In a production app, you might want to return an error here or disable AI routes
-    // For now, we'll let it proceed but log the error.
 }
 
 const genAI = new GoogleGenerativeAI(geminiApiKey);
-// Using gemini-1.5-flash for general chat and contextual insights
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// --- General AI Chat Endpoint ---
-// POST /api/ai/chat
 router.post('/chat', async (req, res) => {
     const { message } = req.body;
 
@@ -29,48 +21,70 @@ router.post('/chat', async (req, res) => {
     try {
         const result = await model.generateContent(message);
         const response = await result.response;
-        const text = response.text(); // Get the text from the AI's response
-
+        const text = response.text();
         res.json({ reply: text });
-
     } catch (error) {
         console.error('Error calling Gemini API for general chat:', error);
         res.status(500).json({ error: 'Failed to get a response from the AI assistant.', details: error.message });
     }
 });
 
-// --- Journal Insights AI Endpoint ---
-// POST /api/ai/journal-insights
 router.post('/journal-insights', async (req, res) => {
-    const { journalEntryContent } = req.body; // Expect the journal content here
+    const { journalEntryContent } = req.body;
 
     if (!journalEntryContent) {
         return res.status(400).json({ error: 'Journal entry content is required for insights.' });
     }
 
     try {
-        // --- PROMPT ENGINEERING: Crucial for tailored AI responses! ---
-        const prompt = `You are an insightful and helpful AI assistant specializing in personal development, well-being, and learning. Your task is to provide constructive analysis and recommendations based on user journal entries.
+        const prompt = `
+            You are a helpful AI assistant acting as a Senior Developer and Tech Mentor. Your task is to analyze a developer's journal entry and provide structured feedback.
 
-Based on the following journal entry, please provide:
-1.  **Suggested Solutions/Actionable Steps:** Offer practical ideas or steps the user could take to address challenges, achieve goals, or improve aspects mentioned in their entry.
-2.  **Reading/Resource Recommendations:** Suggest specific topics, types of resources (e.g., books, articles, online courses), or areas of study related to the themes or challenges in the journal entry.
+            **Your response MUST be a single, valid, minified JSON object and nothing else. Do not wrap it in markdown backticks (e.g., \`\`\`json). Do not add any text before or after the JSON object.**
 
-Format your response clearly with two main headings: "### Suggested Solutions" and "### Reading Recommendations". Use bullet points or numbered lists within each section for clarity. If the entry is generally positive, focus on reinforcing good habits or suggesting ways to further build on successes. If the entry is short or lacks specific challenges, offer general encouragement or broad well-being tips.
+            The JSON object must conform to this exact structure:
+            {
+              "sentiment": "Positive" | "Neutral" | "Negative" | "Mixed",
+              "key_themes": ["Theme 1", "Theme 2"],
+              "positive_reinforcement": "A brief, encouraging statement about a specific accomplishment or good practice mentioned in the entry.",
+              "actionable_advice": [
+                "A concrete, specific, and practical piece of technical or professional advice.",
+                "Another clear, actionable step."
+              ],
+              "resource_recommendations": [
+                {
+                  "type": "Article" | "Video" | "Book" | "Course" | "Documentation",
+                  "title": "Specific Title of the Resource",
+                  "description": "A short sentence explaining why this resource is relevant to the journal entry."
+                }
+              ]
+            }
 
-Journal Entry:
----
-${journalEntryContent}
----
+            **If the entry is too short or vague:** Return a JSON object where "sentiment" is "Neutral" and "actionable_advice" contains a single item: "To receive more detailed insights, try writing about a specific challenge you faced or a new concept you learned today."
 
-Your Response:
-`;
+            **Journal Entry to Analyze:**
+            ---
+            ${journalEntryContent}
+            ---
+        `;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text(); // Get the text from the AI's response
+        let text = response.text();
 
-        res.json({ insights: text });
+        const jsonRegex = /```(?:json)?\s*({[\s\S]*?})\s*```/;
+        const match = text.match(jsonRegex);
+        if (match && match[1]) {
+          text = match[1];
+        }
+
+        try {
+            const insightsJson = JSON.parse(text);
+            res.json({ insights: insightsJson });
+        } catch (parseError) {
+            console.error('Error parsing JSON from Gemini response after cleaning. Raw text:', text);
+            res.json({ insights: { error: 'The AI returned an invalid response. Please try again.' } });
+        }
 
     } catch (error) {
         console.error('Error calling Gemini API for journal insights:', error);

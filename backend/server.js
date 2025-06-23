@@ -22,13 +22,24 @@ process.on('uncaughtException', (err) => {
     console.log('MongoDB connection successful. Starting Express server...');
 
     const app = express();
-
+    
     const corsOptions = {
-        origin: process.env.FRONTEND_URL,
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-        credentials: true,
-        optionsSuccessStatus: 204
-    };
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'http://localhost:4200'
+        ];
+
+        if (!origin || allowedOrigins.includes(origin) || (process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost:'))) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
     app.use(cors(corsOptions));
 
     app.use(express.json());

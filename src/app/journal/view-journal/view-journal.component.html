@@ -100,13 +100,91 @@
               }}
             </button>
           </div>
+
           <div
             *ngIf="showInsightsSection"
-            class="ai-insights-section mt-5 p-4 rounded"
+            class="ai-insights-container mt-5 p-4 rounded"
           >
-            <h3 class="text-white fs-5 fw-bold mb-3">AI Insights</h3>
-            <markdown [data]="aiInsights"></markdown>
+            <div class="insights-header">
+              <i class="bi bi-robot me-2"></i>
+              <h3 class="text-white fs-5 fw-bold mb-0">AI-Powered Insights</h3>
+            </div>
+
+            <div *ngIf="isGeneratingInsights" class="text-center py-5">
+              <div class="spinner-border text-light" role="status"></div>
+              <p class="text-muted mt-3">Analyzing your journal entry...</p>
+            </div>
+
+            <div
+              *ngIf="!isGeneratingInsights && aiInsightsData?.error"
+              class="alert alert-danger mt-3"
+            >
+              {{ aiInsightsData.error }}
+            </div>
+
+            <div
+              *ngIf="
+                !isGeneratingInsights && aiInsightsData && !aiInsightsData.error
+              "
+              class="insights-content"
+            >
+              <div class="insight-row">
+                <div class="insight-block">
+                  <label>Sentiment</label>
+                  <span
+                    class="sentiment-badge"
+                    [ngClass]="aiInsightsData.sentiment | lowercase"
+                    >{{ aiInsightsData.sentiment }}</span
+                  >
+                </div>
+                <div class="insight-block flex-grow-1">
+                  <label>Key Themes</label>
+                  <div class="d-flex flex-wrap gap-2">
+                    <span
+                      *ngFor="let theme of aiInsightsData.key_themes"
+                      class="theme-tag"
+                      >{{ theme }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <div class="insight-block">
+                <label>Positive Reinforcement</label>
+                <p class="positive-quote">
+                  {{ aiInsightsData.positive_reinforcement }}
+                </p>
+              </div>
+
+              <div class="insight-block">
+                <label>Actionable Advice</label>
+                <ul class="advice-list">
+                  <li *ngFor="let advice of aiInsightsData.actionable_advice">
+                    {{ advice }}
+                  </li>
+                </ul>
+              </div>
+
+              <div class="insight-block">
+                <label>Resource Recommendations</label>
+                <div class="resource-cards-container">
+                  <div
+                    *ngFor="
+                      let resource of aiInsightsData.resource_recommendations
+                    "
+                    class="resource-card"
+                  >
+                    <div class="resource-type">{{ resource.type }}</div>
+                    <h5 class="resource-title">{{ resource.title }}</h5>
+                    <p class="resource-description">
+                      {{ resource.description }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
           <h3 class="text-white fs-5 fw-bold mt-4">Notes</h3>
           <div class="mb-4">
             <textarea
