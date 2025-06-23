@@ -53,10 +53,9 @@ export class AddJournalComponent implements OnInit {
     this.isSaving = true;
     this.journalService.getJournalById(id).subscribe({
       next: (journal: Journal) => {
-        // This object holds the data from the backend, including the content with <p> tags
         const formData = {
           title: journal.title,
-          content: journal.content, // The HTML content is correctly placed here
+          content: journal.content,
           category: journal.category,
           date: new Date(journal.date).toISOString().split('T')[0],
           tags: journal.tags ? journal.tags.join(', ') : '',
@@ -66,7 +65,6 @@ export class AddJournalComponent implements OnInit {
           status: journal.status || 'draft',
         };
 
-        // This is the line that fixes the issue by reliably updating all controls, including Quill
         this.journalForm.reset(formData);
 
         if (journal.imageUrl && !journal.imageUrl.startsWith('http')) {

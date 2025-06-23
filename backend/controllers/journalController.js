@@ -1,21 +1,11 @@
 const Journal = require("../models/Journal");
 
 const getUserIdFromReq = (req) => {
-  // This function can fail if req.user is not set by the auth middleware
   return req.user ? req.user.id : null;
 };
 
 exports.createJournal = async (req, res) => {
-  // DEBUGGING LOG: Announce that the function has been called.
-  console.log("\n--- CREATE JOURNAL: Request Received ---");
-
   try {
-    // DEBUGGING LOG: Log the entire incoming request body. This is the most important log.
-    console.log(
-      "[DEBUG] Request Body Received:",
-      JSON.stringify(req.body, null, 2)
-    );
-
     const {
       title,
       content,
@@ -29,14 +19,12 @@ exports.createJournal = async (req, res) => {
     const status = req.body.status || "draft";
 
     if (!title || !content) {
-      console.error("[ERROR] Validation Failed: Title or content is missing.");
       return res
         .status(400)
         .json({ message: "Title and content are required." });
     }
 
     if (!req.user) {
-      console.error("[ERROR] Authentication Failed: req.user is missing.");
       return res
         .status(401)
         .json({
@@ -45,8 +33,6 @@ exports.createJournal = async (req, res) => {
     }
 
     const userId = getUserIdFromReq(req);
-    // DEBUGGING LOG: Verify the user ID was extracted successfully.
-    console.log("[DEBUG] User ID from token:", userId);
 
     const journalData = {
       title,
@@ -61,24 +47,11 @@ exports.createJournal = async (req, res) => {
       user: userId,
     };
 
-    // DEBUGGING LOG: Log the final object we are about to save to MongoDB.
-    console.log(
-      "[DEBUG] Journal object to be saved:",
-      JSON.stringify(journalData, null, 2)
-    );
-
     const journal = new Journal(journalData);
     const saved = await journal.save();
 
-    console.log("[SUCCESS] Journal saved successfully with ID:", saved._id);
     res.status(201).json(saved);
   } catch (err) {
-    // DEBUGGING LOG: Log the full error object to see detailed validation messages.
-    console.error(
-      "[CRITICAL] An error occurred in the createJournal catch block:",
-      err
-    );
-
     if (err.name === "ValidationError") {
       const messages = Object.values(err.errors).map((val) => val.message);
       return res
@@ -94,8 +67,6 @@ exports.createJournal = async (req, res) => {
       .json({ message: "Error creating journal", error: err.message });
   }
 };
-
-// Other controller functions (get, update, delete) remain the same...
 
 exports.getJournals = async (req, res) => {
   try {
