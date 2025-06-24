@@ -14,6 +14,9 @@ yarn-error.log*
 # Angular cache directory
 /.angular/cache
 
+# Ignore Angular cache files
+.angular/
+
 # Environment variables
 .env
 
