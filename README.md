@@ -56,7 +56,7 @@ To get a local copy up and running, follow these simple steps.
 
 1.  **Clone the Repository**
     ```sh
-    git clone (https://github.com/SharonLawal/DevJournal.git)
+    git clone https://github.com/SharonLawal/DevJournal.git
     cd DevJournal
     ```
 
