@@ -146,29 +146,4 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.aiSettingsMessage = `AI Assistant ${this.aiAssistantEnabled ? 'enabled' : 'disabled'} (functionality not yet fully wired).`;
     this.aiSettingsMessageClass = 'message-info';
   }
-
-  exportJournals(): void {
-    this.exportMessage = null;
-    this.exportMessageClass = '';
-    this.journalService.getAllJournals().subscribe({
-      next: (journals: Journal[]) => {
-        const dataStr = JSON.stringify(journals, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `devjournal_export_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        this.exportMessage = 'Journals exported successfully!';
-        this.exportMessageClass = 'message-success';
-      },
-      error: (err) => {
-        this.exportMessage = 'Failed to export journals. Please try again.';
-        this.exportMessageClass = 'message-error';
-      }
-    });
-  }
 }

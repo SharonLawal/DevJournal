@@ -24,7 +24,7 @@ const routes: Routes = [
   { path: 'chat', component: ChatComponent, canActivate: [AuthGuard] },
   { path: 'settings', component: SettingsComponent, canActivate: [AuthGuard] },
 
-  { path: '**', redirectTo: 'login' }
+  { path: '**', redirectTo: 'dashboard', pathMatch: 'full' },
 ];
 
 @NgModule({

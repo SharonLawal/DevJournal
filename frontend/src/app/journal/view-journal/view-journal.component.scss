@@ -477,6 +477,15 @@ textarea.form-control {
   }
 }
 
+.pdf-export-container {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 @media (max-width: 768px) {
   .col-lg-10 {
     padding: 2rem 2rem;

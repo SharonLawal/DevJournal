@@ -74,20 +74,5 @@
         </p>
       </div>
     </div> -->
-
-    <div class="settings-section">
-      <h3 class="section-title">Data Export</h3>
-      <div class="settings-card">
-        <p class="export-description">
-          Download all your journal entries as a JSON file.
-        </p>
-        <button class="btn btn-primary" (click)="exportJournals()">
-          Export Journals (JSON)
-        </button>
-        <p *ngIf="exportMessage" [class]="exportMessageClass">
-          {{ exportMessage }}
-        </p>
-      </div>
-    </div>
   </div>
 </div>

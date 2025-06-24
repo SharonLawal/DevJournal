@@ -44,7 +44,7 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
     SettingsComponent,
     AddJournalComponent,
     ViewJournalComponent,
-    SafeHtmlPipe
+    SafeHtmlPipe,
   ],
   imports: [
     BrowserModule,
@@ -61,7 +61,9 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
     MatDatepickerModule,
     MatNativeDateModule,
     MarkdownModule.forRoot({ loader: HttpClient }),
-    QuillModule.forRoot(),
+    QuillModule.forRoot({
+      sanitize: false,
+    }),
   ],
   providers: [
     JournalService,
@@ -69,9 +71,9 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
-      multi: true
-    }
+      multi: true,
+    },
   ],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

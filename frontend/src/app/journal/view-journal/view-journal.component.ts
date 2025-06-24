@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JournalService } from '../../services/journal-service.service';
 import { Journal } from '../../models/journal.model';
 import jsPDF from 'jspdf';
 import { environment } from '../../../environments/environment';
 import { AiAssistantService } from '../../services/ai-assistant.service';
+import html2canvas from 'html2canvas';
+import * as html2pdf from 'html2pdf.js';
 
 @Component({
   selector: 'app-view-journal',
@@ -23,6 +25,8 @@ export class ViewJournalComponent implements OnInit {
   showInsightsSection: boolean = false;
   aiInsightsData: any = null;
 
+  @ViewChild('journalContent') journalContent!: ElementRef;
+  @ViewChild('pdfExportContent') pdfExportContent!: ElementRef;
   private readonly backendUrl: string = environment.apiUrl;
 
   constructor(
@@ -241,209 +245,162 @@ export class ViewJournalComponent implements OnInit {
   exportJournalAsPdf(): void {
     if (!this.journalEntry) {
       this.errorMessage = 'No journal data to export.';
-      setTimeout(() => (this.errorMessage = null), 3000);
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = null;
-    this.successMessage = null;
-
-    try {
-      const doc = new jsPDF();
-      let yPos = 10;
-      const margin = 15;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-
-      const addNewPage = (
-        docInstance: jsPDF,
-        currentY: number,
-        lineSpacing: number = 0
-      ) => {
-        if (currentY + lineSpacing >= pageHeight - margin) {
-          docInstance.addPage();
-          return margin;
-        }
-        return currentY + lineSpacing;
-      };
-
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      let titleLines = doc.splitTextToSize(
-        this.journalEntry.title,
-        pageWidth - 2 * margin
-      );
-      doc.text(titleLines, margin, yPos);
-      yPos = addNewPage(doc, yPos, titleLines.length * 9 + 5);
-
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text(
-        `Written on: ${new Date(this.journalEntry.date).toLocaleDateString()}`,
-        margin,
-        yPos
-      );
-      yPos = addNewPage(doc, yPos, 6);
-
-      if (this.journalEntry.category) {
-        doc.text(`Category: ${this.journalEntry.category}`, margin, yPos);
-        yPos = addNewPage(doc, yPos, 6);
-      }
-      if (this.journalEntry.tags && this.journalEntry.tags.length > 0) {
-        doc.text(
-          `Tags: ${this.getTagsAsString(this.journalEntry.tags)}`,
-          margin,
-          yPos
-        );
-        yPos = addNewPage(doc, yPos, 6);
-      }
-      doc.setTextColor(0, 0, 0);
-      yPos = addNewPage(doc, yPos, 10);
-
-      if (this.journalEntry.imageUrl) {
-        this.isLoading = true;
-        this.loadImageToBase64(this.journalEntry.imageUrl)
-          .then((base64Image) => {
-            if (base64Image) {
-              const imgProps = doc.getImageProperties(base64Image);
-              const imgWidth = pageWidth - 2 * margin;
-              const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-              yPos = addNewPage(doc, yPos, 5);
-              if (yPos + imgHeight >= pageHeight - margin) {
-                doc.addPage();
-                yPos = margin;
-              }
-              doc.addImage(
-                base64Image,
-                'PNG',
-                margin,
-                yPos,
-                imgWidth,
-                imgHeight
-              );
-              yPos = addNewPage(doc, yPos, imgHeight + 5);
-            }
-            this.continuePdfGeneration(doc, yPos);
-          })
-          .catch((err) => {
-            console.error('Error loading image for PDF:', err);
-            this.errorMessage =
-              'Failed to load image for PDF. Exporting text only.';
-            this.continuePdfGeneration(doc, yPos);
-          });
-      } else {
-        this.continuePdfGeneration(doc, yPos);
-      }
-    } catch (err) {
-      console.error('Error during PDF export:', err);
-      this.errorMessage = 'Error exporting journal as PDF. Please try again.';
-      this.isLoading = false;
-      setTimeout(() => (this.errorMessage = null), 5000);
-    }
-  }
-
-  private continuePdfGeneration(doc: jsPDF, currentY: number): void {
-    let yPos = currentY;
-    const margin = 15;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-
-    const addNewPage = (
-      docInstance: jsPDF,
-      currentY: number,
-      lineSpacing: number = 0
-    ) => {
-      if (currentY + lineSpacing >= pageHeight - margin) {
-        docInstance.addPage();
-        return margin;
-      }
-      return currentY + lineSpacing;
+    this.isSaving = true;
+    const element = this.pdfExportContent.nativeElement;
+    const opt = {
+      margin:       [0.5, 0.5, 0.5, 0.5],
+      filename:     `${this.journalEntry.title || 'Journal_Entry'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    if (this.journalEntry?.content) {
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      yPos = addNewPage(doc, yPos, 10);
-      const parser = new DOMParser();
-      const docHtml = parser.parseFromString(
-        this.journalEntry.content,
-        'text/html'
-      );
-      const textContent = docHtml.body.textContent || '';
-      const contentLines = doc.splitTextToSize(
-        textContent,
-        pageWidth - 2 * margin
-      );
-      contentLines.forEach((line: string | string[]) => {
-        yPos = addNewPage(doc, yPos, 7);
-        doc.text(line, margin, yPos);
-      });
-    }
-
-    if (this.journalEntry?.notes) {
-      yPos = addNewPage(doc, yPos, 15);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Notes', margin, yPos);
-      yPos = addNewPage(doc, yPos, 10);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      const notesLines = doc.splitTextToSize(
-        this.journalEntry.notes,
-        pageWidth - 2 * margin
-      );
-      notesLines.forEach((line: string | string[]) => {
-        yPos = addNewPage(doc, yPos, 7);
-        doc.text(line, margin, yPos);
-      });
-    }
-
-    if (
-      this.journalEntry?.relatedLinks &&
-      this.journalEntry.relatedLinks.length > 0
-    ) {
-      yPos = addNewPage(doc, yPos, 15);
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Related Work', margin, yPos);
-      yPos = addNewPage(doc, yPos, 10);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      this.journalEntry.relatedLinks.forEach((link) => {
-        yPos = addNewPage(doc, yPos, 6);
-        doc.text(`🔗 ${link}`, margin, yPos);
-      });
-    }
-
-    doc.save(`${this.journalEntry?.title || 'Journal_Entry'}.pdf`);
-    this.successMessage = 'Journal exported as PDF!';
-    this.isLoading = false;
-    setTimeout(() => (this.successMessage = null), 3000);
-  }
-
-  private loadImageToBase64(url: string): Promise<string | null> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
-          reject('Could not get canvas context');
-        }
-      };
-      img.onerror = (error) => {
-        reject(error);
-      };
-      img.src = url;
+    html2pdf().from(element).set(opt).save().then(() => {
+      this.isSaving = false;
+      this.successMessage = 'Journal exported as PDF!';
+      setTimeout(() => (this.successMessage = null), 3000);
+    }).catch((err: any) => {
+      this.isSaving = false;
+      this.errorMessage = 'Failed to export PDF. Please try again.';
+      console.error('PDF Export Error:', err);
     });
   }
+
+  // exportJournalAsPdf(): void {
+  //   if (!this.journalEntry) {
+  //     this.errorMessage = 'No journal data to export.';
+  //     return;
+  //   }
+
+  //   this.isSaving = true;
+  //   const element = this.journalContent.nativeElement;
+  //   const opt = {
+  //     margin: 1,
+  //     filename: `${this.journalEntry.title || 'Journal_Entry'}.pdf`,
+  //     image: { type: 'jpeg', quality: 0.98 },
+  //     html2canvas: { scale: 2, useCORS: true },
+  //     jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+  //   };
+
+  //   // New Promise-based syntax for html2pdf
+  //   html2pdf()
+  //     .from(element)
+  //     .set(opt)
+  //     .save()
+  //     .then(() => {
+  //       this.isSaving = false;
+  //       this.successMessage = 'Journal exported as PDF!';
+  //       setTimeout(() => (this.successMessage = null), 3000);
+  //     })
+  //     .catch((err: any) => {
+  //       this.isSaving = false;
+  //       this.errorMessage = 'Failed to export PDF. Please try again.';
+  //       console.error('PDF Export Error:', err);
+  //     });
+  // }
+
+  // private continuePdfGeneration(doc: jsPDF, currentY: number): void {
+  //   let yPos = currentY;
+  //   const margin = 15;
+  //   const pageWidth = doc.internal.pageSize.getWidth();
+  //   const pageHeight = doc.internal.pageSize.getHeight();
+
+  //   const addNewPage = (
+  //     docInstance: jsPDF,
+  //     currentY: number,
+  //     lineSpacing: number = 0
+  //   ) => {
+  //     if (currentY + lineSpacing >= pageHeight - margin) {
+  //       docInstance.addPage();
+  //       return margin;
+  //     }
+  //     return currentY + lineSpacing;
+  //   };
+
+  //   if (this.journalEntry?.content) {
+  //     doc.setFontSize(12);
+  //     doc.setFont('helvetica', 'normal');
+  //     yPos = addNewPage(doc, yPos, 10);
+  //     const parser = new DOMParser();
+  //     const docHtml = parser.parseFromString(
+  //       this.journalEntry.content,
+  //       'text/html'
+  //     );
+  //     const textContent = docHtml.body.textContent || '';
+  //     const contentLines = doc.splitTextToSize(
+  //       textContent,
+  //       pageWidth - 2 * margin
+  //     );
+  //     contentLines.forEach((line: string | string[]) => {
+  //       yPos = addNewPage(doc, yPos, 7);
+  //       doc.text(line, margin, yPos);
+  //     });
+  //   }
+
+  //   if (this.journalEntry?.notes) {
+  //     yPos = addNewPage(doc, yPos, 15);
+  //     doc.setFontSize(16);
+  //     doc.setFont('helvetica', 'bold');
+  //     doc.text('Notes', margin, yPos);
+  //     yPos = addNewPage(doc, yPos, 10);
+  //     doc.setFontSize(12);
+  //     doc.setFont('helvetica', 'normal');
+  //     const notesLines = doc.splitTextToSize(
+  //       this.journalEntry.notes,
+  //       pageWidth - 2 * margin
+  //     );
+  //     notesLines.forEach((line: string | string[]) => {
+  //       yPos = addNewPage(doc, yPos, 7);
+  //       doc.text(line, margin, yPos);
+  //     });
+  //   }
+
+  //   if (
+  //     this.journalEntry?.relatedLinks &&
+  //     this.journalEntry.relatedLinks.length > 0
+  //   ) {
+  //     yPos = addNewPage(doc, yPos, 15);
+  //     doc.setFontSize(16);
+  //     doc.setFont('helvetica', 'bold');
+  //     doc.text('Related Work', margin, yPos);
+  //     yPos = addNewPage(doc, yPos, 10);
+  //     doc.setFontSize(10);
+  //     doc.setFont('helvetica', 'normal');
+  //     this.journalEntry.relatedLinks.forEach((link) => {
+  //       yPos = addNewPage(doc, yPos, 6);
+  //       doc.text(`🔗 ${link}`, margin, yPos);
+  //     });
+  //   }
+
+  //   doc.save(`${this.journalEntry?.title || 'Journal_Entry'}.pdf`);
+  //   this.successMessage = 'Journal exported as PDF!';
+  //   this.isLoading = false;
+  //   setTimeout(() => (this.successMessage = null), 3000);
+  // }
+
+  // private loadImageToBase64(url: string): Promise<string | null> {
+  //   return new Promise((resolve, reject) => {
+  //     const img = new Image();
+  //     img.crossOrigin = 'Anonymous';
+  //     img.onload = () => {
+  //       const canvas = document.createElement('canvas');
+  //       canvas.width = img.width;
+  //       canvas.height = img.height;
+  //       const ctx = canvas.getContext('2d');
+  //       if (ctx) {
+  //         ctx.drawImage(img, 0, 0);
+  //         resolve(canvas.toDataURL('image/png'));
+  //       } else {
+  //         reject('Could not get canvas context');
+  //       }
+  //     };
+  //     img.onerror = (error) => {
+  //       reject(error);
+  //     };
+  //     img.src = url;
+  //   });
+  // }
 }
