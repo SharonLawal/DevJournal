@@ -1,5 +1,5 @@
 [build]
-  command = "npm install --legacy-peer-deps && ng build --prod"
+  command = "npm install --legacy-peer-deps && ng build --configuration production"
 
   publish = "dist/dev-journal"
 
