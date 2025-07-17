@@ -1,7 +1,11 @@
-<div class="container-fluid py-5 d-flex justify-content-center add-journal-wrapper">
+<div
+  class="container-fluid py-5 d-flex justify-content-center add-journal-wrapper"
+>
   <div class="journal-form w-100">
     <div class="journal-header-section">
-      <h1 class="journal-page-title">{{ isEditMode ? 'Edit Journal Entry' : 'New Journal Entry' }}</h1>
+      <h1 class="journal-page-title">
+        {{ isEditMode ? "Edit Journal Entry" : "New Journal Entry" }}
+      </h1>
     </div>
 
     <form [formGroup]="journalForm">
@@ -15,23 +19,55 @@
           autocomplete="off"
           placeholder="Enter journal title"
         />
-        <p *ngIf="f['title'].invalid && f['title'].touched" class="error-message">
-          <span *ngIf="f['title'].errors?.['required']">Title is required.</span>
-          <span *ngIf="f['title'].errors?.['minlength']">Title must be at least 3 characters long.</span>
+        <p
+          *ngIf="f['title'].invalid && f['title'].touched"
+          class="error-message"
+        >
+          <span *ngIf="f['title'].errors?.['required']"
+            >Title is required.</span
+          >
+          <span *ngIf="f['title'].errors?.['minlength']"
+            >Title must be at least 3 characters long.</span
+          >
         </p>
       </div>
 
       <div class="form-group">
         <label for="content">Content</label>
-        <quill-editor
+        <editor
+          apiKey="x6br69syaewh7l8pxff1clr1xpfmvbeyhg6lrqf55n84ze8e"
           id="content"
           formControlName="content"
-          placeholder="What's on your mind?"
-          [styles]="{ 'min-height': '250px' }"
-        ></quill-editor>
-        <p *ngIf="f['content'].invalid && f['content'].touched" class="error-message">
-          <span *ngIf="f['content'].errors?.['required']">Content is required.</span>
-          <span *ngIf="f['content'].errors?.['minlength']">Content must be at least 10 characters long.</span>
+          [init]="{
+            height: 350,
+            menubar: true,
+            skin: 'oxide-dark',
+            content_css: 'dark',
+            content_style: 'body { background-color: #5e5a73; color: #e0e0e0; } body::-webkit-scrollbar { width: 10px; } body::-webkit-scrollbar-track { background: #444; border-radius: 5px; } body::-webkit-scrollbar-thumb { background-color: #888; border-radius: 5px; border: 2px solid #444; } body::-webkit-scrollbar-thumb:hover { background-color: #aaa; } body { scrollbar-width: thin; scrollbar-color: #888 #444; }',
+            plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'print', 'preview', 'anchor',
+            'searchreplace', 'visualblocks', 'code', 'fullscreen', 'insertdatetime', 'media', 'table', 'paste',
+            'wordcount', 'codesample', 'help', 'hr', 'pagebreak', 'nonbreaking',
+            'autosave', 'emoticons', 'charmap', 'quickbars'
+            ],
+            toolbar:
+              'undo redo | styleselect | forecolor backcolor | bold italic underline strikethrough | ' +
+              'alignleft aligncenter alignright alignjustify | outdent indent | ' +
+              'bullist numlist | link image media codesample | hr pagebreak | ' +
+              'fullscreen preview | emoticons charmap | insertdatetime | table | help | code',
+            toolbar_mode: 'wrap',
+          }"
+        ></editor>
+        <p
+          *ngIf="f['content'].invalid && f['content'].touched"
+          class="error-message"
+        >
+          <span *ngIf="f['content'].errors?.['required']"
+            >Content is required.</span
+          >
+          <span *ngIf="f['content'].errors?.['minlength']"
+            >Content must be at least 10 characters long.</span
+          >
         </p>
       </div>
 
@@ -45,7 +81,10 @@
           autocomplete="off"
           placeholder="e.g., Personal, Work, Ideas"
         />
-        <p *ngIf="f['category'].invalid && f['category'].touched" class="error-message">
+        <p
+          *ngIf="f['category'].invalid && f['category'].touched"
+          class="error-message"
+        >
           Category is required.
         </p>
       </div>
@@ -73,12 +112,36 @@
           (drop)="onDrop($event)"
         >
           <p class="text-white fw-bold">Upload Image</p>
-          <p class="text-white-50">Drag and drop an image here, or click to select one.</p>
-          <input type="file" #fileInput style="display: none;" (change)="onFileSelected($event)" accept="image/*" />
-          <button type="button" class="btn btn-dark mt-3" (click)="fileInput.click(); $event.stopPropagation()">Choose File</button>
+          <p class="text-white-50">
+            Drag and drop an image here, or click to select one.
+          </p>
+          <input
+            type="file"
+            #fileInput
+            style="display: none"
+            (change)="onFileSelected($event)"
+            accept="image/*"
+          />
+          <button
+            type="button"
+            class="btn btn-dark mt-3"
+            (click)="fileInput.click(); $event.stopPropagation()"
+          >
+            Choose File
+          </button>
           <div *ngIf="imageUrl" class="mt-3 image-preview-container">
-            <img [src]="imageUrl" alt="Selected Image Preview" class="img-thumbnail img-fluid">
-            <button type="button" class="btn clear-image-btn" (click)="imageUrl = null; selectedFile = null; $event.stopPropagation()">
+            <img
+              [src]="imageUrl"
+              alt="Selected Image Preview"
+              class="img-thumbnail img-fluid"
+            />
+            <button
+              type="button"
+              class="btn clear-image-btn"
+              (click)="
+                imageUrl = null; selectedFile = null; $event.stopPropagation()
+              "
+            >
               <i class="fas fa-times-circle"></i>
             </button>
           </div>
@@ -109,7 +172,10 @@
         />
       </div>
 
-      <div *ngIf="isSaving && !successMessage && !errorMessage" class="info-message loading-state">
+      <div
+        *ngIf="isSaving && !successMessage && !errorMessage"
+        class="info-message loading-state"
+      >
         <div class="spinner-border text-primary-purple" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
@@ -123,10 +189,15 @@
       </div>
 
       <div class="action-buttons">
-        <button type="button" class="btn-custom-secondary" (click)="onCancel()" [disabled]="isSaving">
+        <button
+          type="button"
+          class="btn-custom-secondary"
+          (click)="onCancel()"
+          [disabled]="isSaving"
+        >
           Cancel
         </button>
-      
+
         <button
           *ngIf="journalForm.value.status === 'draft'"
           type="button"
@@ -134,23 +205,38 @@
           (click)="onSaveDraft()"
           [disabled]="isSaving"
         >
-          <span *ngIf="isSaving && journalForm.value.status === 'draft'">Saving...</span>
-          <span *ngIf="!isSaving">{{ isEditMode ? 'Update Draft' : 'Save as Draft' }}</span>
+          <span *ngIf="isSaving && journalForm.value.status === 'draft'"
+            >Saving...</span
+          >
+          <span *ngIf="!isSaving">{{
+            isEditMode ? "Update Draft" : "Save as Draft"
+          }}</span>
         </button>
-      
-        <span 
-          class="tooltip-wrapper" 
-          [title]="journalForm.invalid ? 'Please fill out all required fields to publish.' : null"
+
+        <span
+          class="tooltip-wrapper"
+          [title]="
+            journalForm.invalid
+              ? 'Please fill out all required fields to publish.'
+              : null
+          "
         >
           <button
             type="button"
             class="btn-custom-primary"
             (click)="onPublish()"
-            [disabled]="isSaving || (journalForm.invalid && (!isEditMode || journalForm.dirty))"
+            [disabled]="
+              isSaving ||
+              (journalForm.invalid && (!isEditMode || journalForm.dirty))
+            "
           >
             <span *ngIf="isSaving">Publishing...</span>
             <span *ngIf="!isSaving">
-              {{ isEditMode && journalForm.value.status === 'published' ? 'Update Published Entry' : 'Publish' }}
+              {{
+                isEditMode && journalForm.value.status === "published"
+                  ? "Update Published Entry"
+                  : "Publish"
+              }}
             </span>
           </button>
         </span>

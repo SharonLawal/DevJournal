@@ -1,10 +1,10 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JournalService } from '../../services/journal-service.service';
 import { Journal } from '../../models/journal.model';
 import { environment } from '../../../environments/environment';
-import { QuillEditorComponent } from 'ngx-quill';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-add-journal',
@@ -20,9 +20,8 @@ export class AddJournalComponent implements OnInit {
   errorMessage: string | null = null;
   isEditMode: boolean = false;
   journalId: string | null = null;
+  sanitizedBackendContent: SafeHtml | null = null;
 
-  @ViewChild(QuillEditorComponent, { static: false })
-  quillEditor!: QuillEditorComponent;
   private readonly backendUrl: string = environment.apiUrl;
 
   constructor(
@@ -30,7 +29,8 @@ export class AddJournalComponent implements OnInit {
     private journalService: JournalService,
     private router: Router,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -53,44 +53,6 @@ export class AddJournalComponent implements OnInit {
     });
   }
 
-  // loadJournalData(id: string): void {
-  //   this.isSaving = true;
-  //   this.journalService.getJournalById(id).subscribe({
-  //     next: (journal: Journal) => {
-  //       const formData = {
-  //         title: journal.title,
-  //         content: journal.content,
-  //         category: journal.category,
-  //         date: new Date(journal.date).toISOString().split('T')[0],
-  //         tags: journal.tags ? journal.tags.join(', ') : '',
-  //         relatedLinks: journal.relatedLinks
-  //           ? journal.relatedLinks.join(', ')
-  //           : '',
-  //         status: journal.status || 'draft',
-  //       };
-
-  //       this.journalForm.reset(formData);
-
-  //       setTimeout(() => {
-  //         if (this.quillEditor && this.quillEditor.quillEditor) {
-  //           this.quillEditor.writeValue(journal.content);
-  //         }
-  //       }, 100);
-
-  //       if (journal.imageUrl && !journal.imageUrl.startsWith('http')) {
-  //         this.imageUrl = `${this.backendUrl}${journal.imageUrl}`;
-  //       } else {
-  //         this.imageUrl = journal.imageUrl ?? null;
-  //       }
-  //       this.isSaving = false;
-  //     },
-  //     error: (err) => {
-  //       this.errorMessage = 'Failed to load journal. Please try again.';
-  //       this.isSaving = false;
-  //     },
-  //   });
-  // }
-
   loadJournalData(id: string): void {
     this.isSaving = true;
     this.journalService.getJournalById(id).subscribe({
@@ -100,6 +62,18 @@ export class AddJournalComponent implements OnInit {
           'color: limegreen; font-weight: bold;',
           journal
         );
+
+        if (typeof journal.content === 'string') {
+          this.sanitizedBackendContent = this.sanitizer.bypassSecurityTrustHtml(journal.content);
+          console.log(
+            '%c1b. Sanitized content for diagnostic div (SafeHtml object):',
+            'color: purple;',
+            this.sanitizedBackendContent
+          );
+        } else {
+          this.sanitizedBackendContent = null;
+          console.error('journal.content is not a string for sanitization. Cannot set diagnostic HTML.');
+        }
 
         const formData = {
           title: journal.title,
@@ -114,43 +88,7 @@ export class AddJournalComponent implements OnInit {
         };
 
         this.journalForm.reset(formData);
-        console.log('%c2. Form model has been reset.', 'color: skyblue;');
-
-        setTimeout(() => {
-          console.log(
-            '%c3. Inside setTimeout: Attempting to update the editor view.',
-            'color: orange;'
-          );
-
-          if (this.quillEditor && this.quillEditor.quillEditor) {
-            console.log(
-              '%c4. SUCCESS: quillEditor ViewChild is valid.',
-              'color: limegreen; font-weight: bold;',
-              this.quillEditor
-            );
-
-            console.log(
-              '%c5. Calling writeValue with content:',
-              'color: skyblue;',
-              journal.content
-            );
-
-            if (this.quillEditor && this.quillEditor.quillEditor) {
-              this.quillEditor.writeValue(journal.content);
-              this.cdr.detectChanges();
-            }
-
-            console.log(
-              '%c6. FINISHED: writeValue has been called.',
-              'color: limegreen; font-weight: bold;'
-            );
-          } else {
-            console.error(
-              '%c4. FAILURE: quillEditor ViewChild is UNDEFINED or not ready.',
-              'color: red; font-weight: bold;'
-            );
-          }
-        }, 200);
+        console.log('%c2. Form model has been reset (TinyMCE should update automatically).', 'color: skyblue;');
 
         if (journal.imageUrl && !journal.imageUrl.startsWith('http')) {
           this.imageUrl = `${this.backendUrl}${journal.imageUrl}`;

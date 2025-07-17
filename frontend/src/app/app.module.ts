@@ -8,7 +8,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { MarkdownModule } from 'ngx-markdown';
-import { QuillModule } from 'ngx-quill';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -31,6 +30,7 @@ import { ViewJournalComponent } from './journal/view-journal/view-journal.compon
 import { JournalService } from './services/journal-service.service';
 import { AuthService } from './services/auth.service';
 import { SafeHtmlPipe } from './pipes/safe-html.pipe';
+import { EditorModule } from '@tinymce/tinymce-angular';
 
 @NgModule({
   declarations: [
@@ -60,10 +60,8 @@ import { SafeHtmlPipe } from './pipes/safe-html.pipe';
     MatIconModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    EditorModule,
     MarkdownModule.forRoot({ loader: HttpClient }),
-    QuillModule.forRoot({
-      sanitize: false,
-    }),
   ],
   providers: [
     JournalService,
